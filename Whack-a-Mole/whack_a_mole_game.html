@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whack-a-Mole Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .score, .timer {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px 25px;
+            border-radius: 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            backdrop-filter: blur(5px);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 30px;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hole {
+            width: 80px;
+            height: 80px;
+            background: #2c3e50;
+            border-radius: 50%;
+            position: relative;
+            cursor: pointer;
+            border: 3px solid #34495e;
+            transition: all 0.2s ease;
+            box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .hole:hover {
+            transform: scale(1.05);
+        }
+
+        .mole {
+            width: 60px;
+            height: 60px;
+            background: #8B4513;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            transition: transform 0.2s ease;
+            cursor: pointer;
+            border: 3px solid #654321;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .mole::before {
+            content: '👀';
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 30px;
+        }
+
+        .mole.active {
+            transform: translate(-50%, -50%) scale(1);
+            animation: wiggle 0.5s ease-in-out infinite alternate;
+        }
+
+        .mole:hover {
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+
+        .points-display {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ffd700;
+            font-weight: bold;
+            font-size: 1.2rem;
+            pointer-events: none;
+            animation: floatUp 1s ease-out;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+                scale: 1;
+            }
+            50% {
+                scale: 1.2;
+            }
+            100% {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-20px);
+                scale: 1;
+            }
+        }
+
+        @keyframes wiggle {
+            0% { transform: translate(-50%, -50%) scale(1) rotate(-2deg); }
+            100% { transform: translate(-50%, -50%) scale(1) rotate(2deg); }
+        }
+
+        .whacked {
+            animation: whack 0.3s ease-out;
+        }
+
+        @keyframes whack {
+            0% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.3); background: #ff6b6b; }
+            100% { transform: translate(-50%, -50%) scale(0); }
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .scores-history {
+            margin-top: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(5px);
+        }
+
+        .scores-history h3 {
+            margin-bottom: 15px;
+            color: #ffd700;
+        }
+
+        .score-item {
+            background: rgba(255, 255, 255, 0.1);
+            margin: 8px 0;
+            padding: 10px 15px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .score-item.best {
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            color: #333;
+            font-weight: bold;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .modal h2 {
+            color: #ffd700;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal p {
+            font-size: 1.3rem;
+            margin-bottom: 30px;
+        }
+
+        .close-modal {
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            color: #333;
+        }
+
+        @media (max-width: 600px) {
+            .hole {
+                width: 60px;
+                height: 60px;
+            }
+
+            .mole {
+                width: 45px;
+                height: 45px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .game-info {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🔨 Whack-a-Mole 🔨</h1>
+
+        <div class="game-info">
+            <div class="score">Score: <span id="currentScore">0</span></div>
+            <div class="timer">Time: <span id="timeLeft">60</span>s</div>
+        </div>
+
+        <div class="scoring-info">
+            <p style="margin-bottom: 15px; font-size: 0.9rem; opacity: 0.8;">
+                💡 <strong>Pro Tip:</strong> Hit moles quickly for more points! Instant hits = 100 pts, slower hits = 10 pts
+            </p>
+        </div>
+
+        <div class="game-grid" id="gameGrid"></div>
+
+        <div class="controls">
+            <button id="startBtn">Start Game</button>
+            <button id="resetBtn">Reset Scores</button>
+        </div>
+
+        <div class="scores-history" id="scoresHistory">
+            <h3>🏆 Previous Scores</h3>
+            <div id="scoresList"></div>
+        </div>
+    </div>
+
+    <div class="modal" id="highScoreModal">
+        <div class="modal-content">
+            <h2>🎉 NEW HIGH SCORE! 🎉</h2>
+            <p>Congratulations! You scored <span id="newHighScore">0</span> points!</p>
+            <button class="close-modal" onclick="closeModal()">Awesome!</button>
+        </div>
+    </div>
+
+    <audio id="backgroundMusic" src="background_arcade.mp3" loop preload="auto"></audio>
+
+    <script>
+        /**
+         * WhackAMole Game Class
+         *
+         * A complete whack-a-mole game implementation with competitive scoring,
+         * persistent score tracking, and high score celebrations.
+         *
+         * Features:
+         * - 4x4 grid of holes (16 total)
+         * - 60-second timed gameplay
+         * - Dynamic scoring based on reaction time (10-100 points)
+         * - Persistent score history using localStorage
+         * - High score modal celebrations
+         * - Floating point displays with reaction time feedback
+         */
+        class WhackAMole {
+            /**
+             * Constructor - Initialize game state and setup
+             * Sets up default values, loads saved scores, and initializes the game
+             */
+            constructor() {
+                // Game state variables
+                this.score = 0;                    // Current game score
+                this.timeLeft = 60;                // Countdown timer (seconds)
+                this.isGameActive = false;         // Flag to track if game is running
+                this.moleInterval = null;          // Interval ID for mole spawning
+                this.gameTimer = null;             // Interval ID for countdown timer
+                this.holes = [];                   // Array to store hole DOM elements
+                this.activeMoles = new Set();      // Track which moles are currently active
+                this.moleTimeouts = new Map();     // Track timeouts for each mole
+                this.backgroundMusic = document.getElementById('backgroundMusic'); // Reference to background music
+
+                // Audio context for sound effects
+                this.audioContext = null;
+                this.initAudio();
+
+                // Load saved scores from localStorage, default to empty array if none exist
+                this.scores = JSON.parse(localStorage.getItem('whackAMoleScores')) || [];
+
+                // Initialize the game setup
+                this.initGame();
+                this.displayScores();
+            }
+
+            /**
+             * Initialize Audio Context
+             * Sets up Web Audio API for generating sound effects
+             */
+            initAudio() {
+                try {
+                    // Create audio context (with fallback for older browsers)
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (error) {
+                    console.warn('Web Audio API not supported:', error);
+                    this.audioContext = null;
+                }
+            }
+
+            /**
+             * Play Whack Sound Effect
+             * Generates a realistic "thump" sound using Web Audio API
+             */
+            playWhackSound() {
+                if (!this.audioContext) return;
+
+                try {
+                    // Resume audio context if it's suspended (required by some browsers)
+                    if (this.audioContext.state === 'suspended') {
+                        this.audioContext.resume();
+                    }
+
+                    const currentTime = this.audioContext.currentTime;
+
+                    // Create oscillator for the main thump sound
+                    const oscillator = this.audioContext.createOscillator();
+                    const gainNode = this.audioContext.createGain();
+
+                    // Connect oscillator to gain to speakers
+                    oscillator.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
+
+                    // Configure the thump sound
+                    oscillator.type = 'sine';
+
+                    // Create a deep "thump" by starting at a higher frequency and dropping quickly
+                    oscillator.frequency.setValueAtTime(150, currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(60, currentTime + 0.1);
+                    oscillator.frequency.exponentialRampToValueAtTime(40, currentTime + 0.15);
+
+                    // Create envelope for realistic impact sound
+                    gainNode.gain.setValueAtTime(0, currentTime);
+                    gainNode.gain.linearRampToValueAtTime(0.3, currentTime + 0.01); // Quick attack
+                    gainNode.gain.exponentialRampToValueAtTime(0.1, currentTime + 0.1); // Decay
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, currentTime + 0.2); // Release
+
+                    // Start and stop the sound
+                    oscillator.start(currentTime);
+                    oscillator.stop(currentTime + 0.2);
+
+                    // Add a second layer for more realistic "thump"
+                    const noiseOscillator = this.audioContext.createOscillator();
+                    const noiseGain = this.audioContext.createGain();
+
+                    noiseOscillator.connect(noiseGain);
+                    noiseGain.connect(this.audioContext.destination);
+
+                    // Add some white noise for the impact texture
+                    noiseOscillator.type = 'sawtooth';
+                    noiseOscillator.frequency.setValueAtTime(80, currentTime);
+
+                    // Lower volume noise layer
+                    noiseGain.gain.setValueAtTime(0, currentTime);
+                    noiseGain.gain.linearRampToValueAtTime(0.1, currentTime + 0.005);
+                    noiseGain.gain.exponentialRampToValueAtTime(0.001, currentTime + 0.05);
+
+                    noiseOscillator.start(currentTime);
+                    noiseOscillator.stop(currentTime + 0.05);
+
+                } catch (error) {
+                    console.warn('Error playing whack sound:', error);
+                }
+            }
+            initGame() {
+                this.createGrid();
+                this.bindEvents();
+            }
+
+            /**
+             * Create Game Grid
+             * Dynamically generates a 4x4 grid of holes with moles
+             * Each hole contains a mole element with a unique data-hole attribute
+             */
+            createGrid() {
+                const grid = document.getElementById('gameGrid');
+                grid.innerHTML = ''; // Clear any existing content
+
+                // Create 16 holes (4x4 grid)
+                for (let i = 0; i < 16; i++) {
+                    const hole = document.createElement('div');
+                    hole.className = 'hole';
+                    // Each mole has a data-hole attribute for identification
+                    hole.innerHTML = '<div class="mole" data-hole="' + i + '"></div>';
+                    grid.appendChild(hole);
+                    this.holes.push(hole); // Store reference for later use
+                }
+            }
+
+            /**
+             * Bind Event Listeners
+             * Attaches click handlers to all interactive elements
+             */
+            bindEvents() {
+                // Game control buttons
+                document.getElementById('startBtn').addEventListener('click', () => this.startGame());
+                document.getElementById('resetBtn').addEventListener('click', () => this.resetScores());
+
+                // Add click events to all moles for whacking
+                document.querySelectorAll('.mole').forEach(mole => {
+                    mole.addEventListener('click', (e) => this.whackMole(e));
+                });
+            }
+
+            /**
+             * Start Game
+             * Initializes a new game session with fresh state and starts timers
+             */
+            startGame() {
+                // Prevent multiple games from running simultaneously
+                if (this.isGameActive) return;
+
+                // Reset game state
+                this.score = 0;
+                this.timeLeft = 60;
+                this.isGameActive = true;
+                this.activeMoles.clear();
+                this.clearAllMoleTimeouts();
+
+                // Update UI elements
+                document.getElementById('currentScore').textContent = this.score;
+                document.getElementById('timeLeft').textContent = this.timeLeft;
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('startBtn').textContent = 'Game in Progress...';
+
+                // Clean up any existing active moles
+                this.clearAllActiveMoles();
+
+                // Start background music
+                if (this.backgroundMusic) {
+                    this.backgroundMusic.play().catch(e => console.error("Error playing background music:", e));
+                }
+
+                // Start mole spawning (every 800ms)
+                this.moleInterval = setInterval(() => this.spawnMole(), 800);
+
+                // Start countdown timer (every 1000ms = 1 second)
+                this.gameTimer = setInterval(() => {
+                    this.timeLeft--;
+                    document.getElementById('timeLeft').textContent = this.timeLeft;
+
+                    // End game when time runs out
+                    if (this.timeLeft <= 0) {
+                        this.endGame();
+                    }
+                }, 1000);
+            }
+
+            /**
+             * Clear all active moles and their timeouts
+             */
+            clearAllActiveMoles() {
+                document.querySelectorAll('.mole.active').forEach(mole => {
+                    const holeId = parseInt(mole.dataset.hole);
+                    this.deactivateMole(holeId);
+                });
+            }
+
+            /**
+             * Clear all mole timeouts
+             */
+            clearAllMoleTimeouts() {
+                this.moleTimeouts.forEach(timeoutId => {
+                    clearTimeout(timeoutId);
+                });
+                this.moleTimeouts.clear();
+            }
+
+            /**
+             * Deactivate a specific mole
+             * @param {number} holeId - The hole ID of the mole to deactivate
+             */
+            deactivateMole(holeId) {
+                const mole = document.querySelector(`[data-hole="${holeId}"]`);
+                if (mole) {
+                    mole.classList.remove('active');
+                    delete mole.dataset.spawnTime;
+                    this.activeMoles.delete(holeId);
+
+                    // Clear any existing timeout for this mole
+                    if (this.moleTimeouts.has(holeId)) {
+                        clearTimeout(this.moleTimeouts.get(holeId));
+                        this.moleTimeouts.delete(holeId);
+                    }
+                }
+            }
+
+            /**
+             * Spawn Mole
+             * Creates a new mole at a random position and sets up its lifecycle
+             * Multiple moles can be active at once now for better gameplay
+             */
+            spawnMole() {
+                // Don't spawn moles if game is inactive
+                if (!this.isGameActive) return;
+
+                // Find available holes (not currently active)
+                const availableHoles = [];
+                for (let i = 0; i < 16; i++) {
+                    if (!this.activeMoles.has(i)) {
+                        availableHoles.push(i);
+                    }
+                }
+
+                // Don't spawn if no holes available
+                if (availableHoles.length === 0) return;
+
+                // Select random available hole
+                const randomIndex = Math.floor(Math.random() * availableHoles.length);
+                const holeId = availableHoles[randomIndex];
+                const mole = document.querySelector(`[data-hole="${holeId}"]`);
+
+                if (!mole) return;
+
+                // Activate the mole and record spawn time for scoring
+                mole.classList.add('active');
+                mole.dataset.spawnTime = Date.now().toString();
+                this.activeMoles.add(holeId);
+
+                // Auto-remove mole after 1.5 seconds if not whacked
+                const timeoutId = setTimeout(() => {
+                    if (this.activeMoles.has(holeId)) {
+                        this.deactivateMole(holeId);
+                    }
+                }, 1500);
+
+                this.moleTimeouts.set(holeId, timeoutId);
+            }
+
+            /**
+             * Whack Mole Event Handler
+             * Handles mole clicking with competitive scoring based on reaction time
+             *
+             * Scoring Algorithm:
+             * - Maximum: 100 points (instant hit, 0ms reaction time)
+             * - Minimum: 10 points (slow hit, 1500ms reaction time)
+             * - Linear interpolation between max and min based on reaction time
+             *
+             * @param {Event} e - Click event from mole element
+             */
+            whackMole(e) {
+                // Only process clicks during active gameplay
+                if (!this.isGameActive) return;
+
+                const mole = e.target;
+                const holeId = parseInt(mole.dataset.hole);
+
+                // Only process clicks on active (visible) moles that are tracked as active
+                if (mole.classList.contains('active') && this.activeMoles.has(holeId)) {
+                    // Prevent double-clicking by immediately removing from active set
+                    this.activeMoles.delete(holeId);
+
+                    // Clear the timeout for this mole
+                    if (this.moleTimeouts.has(holeId)) {
+                        clearTimeout(this.moleTimeouts.get(holeId));
+                        this.moleTimeouts.delete(holeId);
+                    }
+
+                    // Calculate reaction time for competitive scoring
+                    const spawnTime = parseInt(mole.dataset.spawnTime);
+                    const currentTime = Date.now();
+                    const reactionTime = currentTime - spawnTime;
+
+                    // Competitive scoring algorithm
+                    // Formula: points = maxPoints - ((maxPoints - minPoints) * (reactionTime / maxTime))
+                    const maxPoints = 100;    // Perfect reaction score
+                    const minPoints = 10;     // Minimum score for any hit
+                    const maxTime = 1500;     // Maximum reaction time (1.5 seconds)
+
+                    // Calculate points using linear interpolation
+                    let points = Math.max(minPoints, maxPoints - ((maxPoints - minPoints) * (reactionTime / maxTime)));
+                    points = Math.round(points); // Round to whole number
+
+                    // Apply visual feedback and update score
+                    mole.classList.remove('active');
+                    mole.classList.add('whacked');
+                    delete mole.dataset.spawnTime;
+
+                    this.score += points;
+                    document.getElementById('currentScore').textContent = this.score;
+
+                    // Play whack sound effect
+                    this.playWhackSound();
+
+                    // Show floating points animation with reaction time info
+                    this.showPointsEarned(mole, points, reactionTime);
+
+                    // Remove whacked animation class after animation completes
+                    setTimeout(() => {
+                        mole.classList.remove('whacked');
+                    }, 300);
+                }
+            }
+
+            /**
+             * Show Points Earned Animation
+             * Creates a floating point display that shows points earned and reaction time
+             *
+             * @param {HTMLElement} mole - The mole element that was whacked
+             * @param {number} points - Points earned for this hit
+             * @param {number} reactionTime - Reaction time in milliseconds
+             */
+            showPointsEarned(mole, points, reactionTime) {
+                // Create floating points display element
+                const pointsDisplay = document.createElement('div');
+                pointsDisplay.className = 'points-display';
+                pointsDisplay.textContent = `+${points}`;
+
+                // Add reaction time information as tooltip
+                const reactionSeconds = (reactionTime / 1000).toFixed(2);
+                pointsDisplay.title = `Reaction time: ${reactionSeconds}s`;
+
+                // Position the display over the mole's hole
+                const hole = mole.parentElement;
+                hole.style.position = 'relative'; // Ensure relative positioning for absolute child
+                hole.appendChild(pointsDisplay);
+
+                // Remove the display after animation completes (1 second)
+                setTimeout(() => {
+                    if (pointsDisplay.parentElement) {
+                        pointsDisplay.parentElement.removeChild(pointsDisplay);
+                    }
+                }, 1000);
+            }
+
+            /**
+             * End Game
+             * Stops all game timers, cleans up active moles, and saves the score
+             */
+            endGame() {
+                // Stop game processes
+                this.isGameActive = false;
+                clearInterval(this.moleInterval);  // Stop spawning moles
+                clearInterval(this.gameTimer);     // Stop countdown timer
+
+                // Stop background music
+                if (this.backgroundMusic) {
+                    this.backgroundMusic.pause();
+                    this.backgroundMusic.currentTime = 0; // Rewind to start
+                }
+
+                // Clean up all active moles and timeouts
+                this.clearAllActiveMoles();
+                this.clearAllMoleTimeouts();
+
+                // Reset UI to ready state
+                document.getElementById('startBtn').disabled = false;
+                document.getElementById('startBtn').textContent = 'Start Game';
+
+                // Process and save the final score
+                this.saveScore();
+            }
+
+            /**
+             * Save Score and Check for High Score
+             * Saves the current game score to localStorage and checks if it's a new high score
+             * Maintains a top-10 leaderboard sorted by score (highest first)
+             */
+            saveScore() {
+                // Create game data object with score and timestamp
+                const gameData = {
+                    score: this.score,
+                    date: new Date().toLocaleDateString(),   // Format: MM/DD/YYYY
+                    time: new Date().toLocaleTimeString()    // Format: HH:MM:SS AM/PM
+                };
+
+                // Determine if this is a new high score
+                const highScore = this.scores.length > 0 ? Math.max(...this.scores.map(s => s.score)) : 0;
+                const isNewHighScore = this.score > highScore;
+
+                // Add new score to the array
+                this.scores.push(gameData);
+
+                // Sort scores in descending order (highest first)
+                this.scores.sort((a, b) => b.score - a.score);
+
+                // Maintain top 10 scores only
+                if (this.scores.length > 10) {
+                    this.scores = this.scores.slice(0, 10);
+                }
+
+                // Persist scores to localStorage
+                localStorage.setItem('whackAMoleScores', JSON.stringify(this.scores));
+
+                // Update the display
+                this.displayScores();
+
+                // Show celebration modal for new high scores (but not for 0 points)
+                if (isNewHighScore && this.score > 0) {
+                    this.showHighScoreModal();
+                }
+            }
+
+            /**
+             * Show High Score Modal
+             * Displays a congratulatory modal for new high scores
+             */
+            showHighScoreModal() {
+                document.getElementById('newHighScore').textContent = this.score;
+                document.getElementById('highScoreModal').style.display = 'block';
+            }
+
+            /**
+             * Display Scores History
+             * Renders the score history list with special highlighting for the highest score
+             */
+            displayScores() {
+                const scoresList = document.getElementById('scoresList');
+
+                // Handle empty scores case
+                if (this.scores.length === 0) {
+                    scoresList.innerHTML = '<p style="opacity: 0.7;">No games played yet!</p>';
+                    return;
+                }
+
+                // Find the highest score for special highlighting
+                const highestScore = Math.max(...this.scores.map(s => s.score));
+
+                // Generate HTML for each score entry
+                scoresList.innerHTML = this.scores.map((score, index) => {
+                    const isBest = score.score === highestScore;
+                    return `
+                        <div class="score-item ${isBest ? 'best' : ''}">
+                            <span>#${index + 1} - ${score.score} points</span>
+                            <span>${score.date} ${score.time}</span>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            /**
+             * Reset Scores
+             * Clears all saved scores after user confirmation
+             */
+            resetScores() {
+                if (confirm('Are you sure you want to reset all scores?')) {
+                    this.scores = [];
+                    localStorage.removeItem('whackAMoleScores');
+                    this.displayScores();
+                }
+            }
+        }
+
+        /**
+         * Close High Score Modal
+         * Global function to close the high score celebration modal
+         */
+        function closeModal() {
+            document.getElementById('highScoreModal').style.display = 'none';
+        }
+
+        // Event Listeners for Modal Interaction
+
+        /**
+         * Close modal when clicking outside the modal content
+         * Provides intuitive UX for modal dismissal
+         */
+        document.getElementById('highScoreModal').addEventListener('click', (e) => {
+            if (e.target.id === 'highScoreModal') {
+                closeModal();
+            }
+        });
+
+        /**
+         * Initialize Game on Page Load
+         * Creates a new WhackAMole instance when the DOM is fully loaded
+         * This ensures all HTML elements are available before game initialization
+         */
+        document.addEventListener('DOMContentLoaded', () => {
+            new WhackAMole();
+        });
+    </script>
+</body>
+</html>
