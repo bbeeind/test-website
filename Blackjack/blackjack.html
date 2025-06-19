@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Futuristic Blackjack</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0A0A1A;
+            --primary-neon: #00FFFF; /* Cyan */
+            --secondary-neon: #39FF14; /* Brighter Green */
+            --tertiary-neon: #FF00FF; /* Magenta */
+            --dark-card-bg: #1A1A3A; /* Slightly lighter card background */
+            --text-color: #E0FFFF;
+            --accent-glow: 0 0 8px var(--primary-neon), 0 0 16px var(--primary-neon);
+            --button-glow-blue: 0 0 8px #4299e1, 0 0 16px #4299e1;
+            --button-glow-green: 0 0 8px #48bb78, 0 0 16px #48bb78;
+            --button-glow-red: 0 0 8px #ef4444, 0 0 16px #ef4444;
+        }
+
+        body {
+            font-family: 'Orbitron', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem 0;
+            overflow-x: hidden; /* Prevent horizontal scroll */
+        }
+
+        .game-container {
+            background-color: #1a1a2a; /* Darker background for container */
+            border-radius: 1.5rem;
+            padding: 2.5rem;
+            box-shadow: var(--accent-glow); /* Neon glow effect */
+            max-width: 90%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            animation: fadeIn 1s ease-out;
+            margin-top: auto;
+            margin-bottom: auto;
+            border: 2px solid var(--primary-neon); /* Neon border */
+            position: relative;
+            z-index: 1; /* Ensure content is above background elements */
+        }
+
+        /* Subtle background grid/lines */
+        .game-container::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            bottom: 10px;
+            border: 1px dashed rgba(0, 255, 255, 0.2); /* Lighter dashed border */
+            border-radius: 1.2rem;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            color: var(--primary-neon);
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-size: 3rem;
+            font-weight: 700;
+            text-shadow: 0 0 10px var(--primary-neon), 0 0 20px var(--primary-neon);
+        }
+
+        .balance-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding: 1rem 1.5rem;
+            background-color: #0d0d1a; /* Even darker for this section */
+            border-radius: 1rem;
+            border: 1px solid var(--secondary-neon);
+            box-shadow: 0 0 5px var(--secondary-neon);
+        }
+
+        .balance-item {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-color);
+            text-shadow: 0 0 5px var(--secondary-neon);
+        }
+
+        .bet-input-group {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            margin-top: 1rem;
+            justify-content: center;
+        }
+
+        .bet-input {
+            padding: 0.75rem 1.25rem;
+            border-radius: 0.5rem;
+            border: 2px solid var(--primary-neon);
+            background-color: #0A0A1A;
+            color: var(--text-color);
+            font-size: 1.2rem;
+            width: 120px;
+            text-align: center;
+            box-shadow: 0 0 5px var(--primary-neon);
+        }
+
+        .bet-input:focus {
+            outline: none;
+            border-color: var(--secondary-neon);
+            box-shadow: 0 0 10px var(--secondary-neon);
+        }
+
+        .hand-section {
+            background-color: var(--dark-card-bg);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            position: relative;
+            border: 1px solid rgba(0, 255, 255, 0.4);
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+        }
+
+        .hand-label {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--text-color);
+            text-shadow: 0 0 5px var(--primary-neon);
+        }
+
+        .cards-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            min-height: 140px; /* Ensure space for cards */
+            justify-content: center;
+        }
+
+        .card {
+            background-color: #1A1A3A; /* Updated to a slightly lighter dark background */
+            color: var(--text-color);
+            border-radius: 0.75rem;
+            width: 100px;
+            height: 150px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5), inset 0 0 5px rgba(0, 255, 255, 0.3);
+            transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
+            border: 2px solid var(--primary-neon);
+            position: relative;
+        }
+
+        .card-hidden {
+            background-color: #0A0A1A; /* Even darker for hidden card */
+            color: var(--primary-neon);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 4rem;
+            text-shadow: 0 0 10px var(--primary-neon);
+            border: 2px dashed var(--primary-neon);
+        }
+
+        .card-top-left, .card-bottom-right {
+            font-size: 1.5rem;
+            position: absolute;
+            font-weight: 700;
+            color: #111111; /* Dark text for all numbers */
+        }
+
+        .card-top-left {
+            top: 8px;
+            left: 8px;
+        }
+
+        .card-bottom-right {
+            bottom: 8px;
+            right: 8px;
+            transform: rotate(180deg);
+        }
+
+        .card-center-value {
+            font-size: 3rem;
+            line-height: 1;
+            margin-top: 15px;
+            color: #111111; /* Dark text for all numbers */
+        }
+
+        /* Suit colors - these classes should apply the glowing shadow to the text within the card */
+        /* To make the text black but cast a colored shadow, we need to apply the shadow to the text elements directly */
+        .card.text-red-600 .card-top-left,
+        .card.text-red-600 .card-center-value,
+        .card.text-red-600 .card-bottom-right {
+            text-shadow: 0 0 5px #FF3388, 0 0 8px #FF3388, 0 0 10px #FF3388; /* Brighter, distinct red glow */
+        }
+
+        .card.text-gray-800 .card-top-left,
+        .card.text-gray-800 .card-center-value,
+        .card.text-gray-800 .card-bottom-right {
+            text-shadow: 0 0 5px var(--secondary-neon), 0 0 8px var(--secondary-neon), 0 0 10px var(--secondary-neon); /* Brighter Green glow */
+        }
+
+
+        .score {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--tertiary-neon); /* Magenta for scores */
+            text-shadow: 0 0 8px var(--tertiary-neon);
+        }
+
+        /* Styles for multiple player hands */
+        #player-hands-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            justify-content: center;
+            flex: 1;
+        }
+
+        .player-hand-section {
+            background-color: var(--dark-card-bg);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            position: relative;
+            flex: 1 1 calc(50% - 0.75rem);
+            min-width: 320px;
+            border: 2px solid rgba(0, 255, 255, 0.4);
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+        }
+
+        .player-hand-section.active-hand {
+            border-color: var(--secondary-neon);
+            box-shadow: 0 0 15px var(--secondary-neon), 0 0 25px var(--secondary-neon);
+        }
+
+        .bet-amount-display {
+            position: absolute;
+            bottom: 1.5rem;
+            left: 1.5rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--tertiary-neon);
+            text-shadow: 0 0 5px var(--tertiary-neon);
+        }
+
+        .buttons-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.25rem;
+            justify-content: center;
+            margin-top: 1.5rem;
+        }
+
+        .game-button {
+            background-color: #00BFFF; /* Deep sky blue */
+            color: var(--text-color);
+            padding: 0.8rem 1.8rem;
+            border-radius: 0.75rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: 2px solid var(--primary-neon);
+            outline: none;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+            box-shadow: var(--button-glow-blue);
+            position: relative;
+            overflow: hidden;
+            flex: 1 1 auto;
+            min-width: 140px;
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.7);
+        }
+        /* Specific button colors */
+        #place-bet-btn, #reset-btn { background-color: var(--secondary-neon); border-color: var(--secondary-neon); box-shadow: var(--button-glow-green); }
+        #hit-btn, #double-down-btn { background-color: #00BFFF; border-color: #00BFFF; box-shadow: var(--button-glow-blue); }
+        #stand-btn { background-color: #FF00FF; border-color: #FF00FF; box-shadow: 0 0 8px #FF00FF, 0 0 16px #FF00FF; }
+        #split-btn { background-color: #FFFF00; border-color: #FFFF00; color: #1a1a2a; text-shadow: none; box-shadow: 0 0 8px #FFFF00, 0 0 16px #FFFF00; }
+
+
+        .game-button:hover {
+            background-color: #008080; /* Darker teal */
+            transform: translateY(-3px);
+            box-shadow: 0 0 15px var(--primary-neon), 0 0 25px var(--primary-neon);
+        }
+        #place-bet-btn:hover, #reset-btn:hover { background-color: #2CCD00; /* Brighter on hover */ box-shadow: 0 0 15px var(--secondary-neon), 0 0 25px var(--secondary-neon); }
+        #stand-btn:hover { background-color: #CC00CC; box-shadow: 0 0 15px #FF00FF, 0 0 25px #FF00FF; }
+        #split-btn:hover { background-color: #CCCC00; box-shadow: 0 0 15px #FFFF00, 0 0 25px #FFFF00; }
+
+
+        .game-button:active {
+            transform: translateY(0);
+            box-shadow: 0 0 5px var(--primary-neon);
+        }
+
+        .game-button:disabled {
+            background-color: #333344; /* Dark grey for disabled */
+            color: #777;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+            border-color: #555;
+            text-shadow: none;
+        }
+
+        #message {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-top: 1rem;
+            min-height: 3rem;
+            color: var(--text-color);
+            text-shadow: 0 0 10px var(--primary-neon);
+            animation: pulse-neon 1.5s infinite alternate;
+        }
+
+        @keyframes pulse-neon {
+            from { transform: scale(1); opacity: 1; text-shadow: 0 0 10px var(--primary-neon); }
+            to { transform: scale(1.02); opacity: 0.9; text-shadow: 0 0 15px var(--primary-neon), 0 0 25px var(--primary-neon); }
+        }
+        /* Make animation only active when message is dynamic */
+        #message.no-animation {
+            animation: none;
+            text-shadow: none;
+        }
+
+        /* New styles for side-by-side layout */
+        .hands-wrapper {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .hands-wrapper > .hand-section,
+        .hands-wrapper > #player-hands-container {
+            flex: 1;
+            min-width: 380px;
+        }
+
+        /* Result messages for individual hands */
+        .player-hand-section .result-message {
+            font-weight: 700;
+            font-size: 1.5rem;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            text-shadow: 0 0 8px rgba(0,0,0,0.8);
+            z-index: 10;
+        }
+        .player-hand-section .result-message.win {
+            color: #00FF00;
+            background-color: rgba(0, 255, 0, 0.2);
+            box-shadow: 0 0 10px #00FF00;
+        }
+        .player-hand-section .result-message.lose {
+            color: #FF0000;
+            background-color: rgba(255, 0, 0, 0.2);
+            box-shadow: 0 0 10px #FF0000;
+        }
+        .player-hand-section .result-message.push {
+            color: #FFFF00;
+            background-color: rgba(255, 255, 0, 0.2);
+            box-shadow: 0 0 10px #FFFF00;
+        }
+
+
+        /* Responsive adjustments */
+        @media (max-width: 1200px) {
+            .hands-wrapper {
+                flex-direction: column;
+                align-items: center;
+            }
+            .hands-wrapper > .hand-section,
+            .hands-wrapper > #player-hands-container {
+                min-width: unset;
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 1.5rem;
+                gap: 1rem;
+            }
+            h1 {
+                font-size: 2.5rem;
+            }
+            .hand-label, .score, .balance-item {
+                font-size: 1.4rem;
+            }
+            .card {
+                width: 80px;
+                height: 120px;
+                font-size: 1.2rem;
+            }
+            .card-center-value {
+                font-size: 2.5rem;
+            }
+            .game-button {
+                padding: 0.7rem 1.4rem;
+                font-size: 1.1rem;
+            }
+            #message {
+                font-size: 1.8rem;
+            }
+            .player-hand-section {
+                flex: 1 1 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .game-container {
+                padding: 1rem;
+            }
+            h1 {
+                font-size: 2rem;
+            }
+            .hand-label, .score, .balance-item {
+                font-size: 1.2rem;
+            }
+            .card {
+                width: 70px;
+                height: 105px;
+                font-size: 1rem;
+            }
+            .card-center-value {
+                font-size: 2.2rem;
+            }
+            .buttons-container {
+                flex-direction: column;
+            }
+            .bet-input-group {
+                flex-direction: column;
+            }
+            .bet-input {
+                width: 80%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <audio id="casino-background-audio" loop>
+        <source src="casino_background_noise.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
+    <div class="game-container">
+        <h1>FUTURISTIC BLACKJACK</h1>
+
+        <div class="balance-section">
+            <span class="balance-item">BANKROLL: $<span id="bankroll">1000</span></span>
+            <span class="balance-item">CURRENT BET: $<span id="current-bet">0</span></span>
+        </div>
+
+        <div class="bet-input-group">
+            <label for="bet-amount" class="text-xl font-medium">BET AMOUNT:</label>
+            <input type="number" id="bet-amount" class="bet-input" value="100" min="1">
+            <button id="place-bet-btn" class="game-button"><span>PLACE BET & DEAL</span></button>
+        </div>
+
+        <div class="hands-wrapper">
+            <div class="hand-section">
+                <span class="hand-label">DEALER'S HAND:</span>
+                <div id="dealer-cards" class="cards-container">
+                    </div>
+                <span id="dealer-score" class="score">SCORE: ??</span>
+            </div>
+
+            <div id="player-hands-container">
+                </div>
+        </div>
+
+
+        <div class="buttons-container">
+            <button id="hit-btn" class="game-button" disabled><span>HIT</span></button>
+            <button id="stand-btn" class="game-button" disabled><span>STAND</span></button>
+            <button id="double-down-btn" class="game-button" disabled><span>DOUBLE DOWN</span></button>
+            <button id="split-btn" class="game-button" disabled><span>SPLIT</span></button>
+            <button id="reset-btn" class="game-button" disabled><span>NEW ROUND</span></button>
+        </div>
+
+        <div id="message">
+            ENTER YOUR BET AND CLICK "PLACE BET & DEAL" TO START!
+        </div>
+    </div>
+
+    <script>
+        // Global variables for game state
+        let deck = []; // Stores the shuffled deck of cards
+        let dealerHand = { cards: [], score: 0 }; // Dealer's hand and score
+        let playerHands = []; // Array of player hands, each: { cards: [], score: 0, bet: 0, isDone: false, result: '' }
+        let activeHandIndex = 0; // Index of the hand currently being played by the player
+        let isGameInProgress = false; // Flag to check if a game is currently active
+        let bankroll = 1000; // Player's starting money
+        let initialBet = 0; // Bet placed for the initial hand (used for splits)
+
+        // Add a new global variable for the audio element
+        const casinoAudio = document.getElementById('casino-background-audio');
+
+        // DOM element references
+        const dealerCardsEl = document.getElementById('dealer-cards');
+        const dealerScoreEl = document.getElementById('dealer-score');
+        const playerHandsContainerEl = document.getElementById('player-hands-container');
+        const messageEl = document.getElementById('message');
+        const placeBetBtn = document.getElementById('place-bet-btn');
+        const hitBtn = document.getElementById('hit-btn');
+        const standBtn = document.getElementById('stand-btn');
+        const doubleDownBtn = document.getElementById('double-down-btn');
+        const splitBtn = document.getElementById('split-btn'); // New Split button
+        const resetBtn = document.getElementById('reset-btn');
+        const bankrollEl = document.getElementById('bankroll');
+        const currentBetEl = document.getElementById('current-bet'); // This will now show the initial bet
+        const betInput = document.getElementById('bet-amount');
+
+        // Card suits and ranks
+        const suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades'];
+        const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+
+        /**
+         * Creates a standard 52-card deck.
+         * Each card is an object with 'value', 'suit', and 'rank' properties.
+         * The 'value' is numeric for scoring, 'rank' is for display (e.g., 'K', 'A').
+         * @returns {Array<Object>} The newly created deck.
+         */
+        function createDeck() {
+            const newDeck = [];
+            for (const suit of suits) {
+                for (const rank of ranks) {
+                    let value;
+                    if (rank === 'J' || rank === 'Q' || rank === 'K') {
+                        value = 10;
+                    } else if (rank === 'A') {
+                        value = 11; // Ace initially counts as 11, can be adjusted to 1 later
+                    } else {
+                        value = parseInt(rank);
+                    }
+                    newDeck.push({ value, suit, rank });
+                }
+            }
+            return newDeck;
+        }
+
+        /**
+         * Shuffles the given deck using the Fisher-Yates algorithm.
+         * @param {Array<Object>} currentDeck - The deck to be shuffled.
+         * @returns {Array<Object>} The shuffled deck.
+         */
+        function shuffleDeck(currentDeck) {
+            for (let i = currentDeck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [currentDeck[i], currentDeck[j]] = [currentDeck[j], currentDeck[i]]; // Swap elements
+            }
+            return currentDeck;
+        }
+
+        /**
+         * Draws a single card from the top of the deck.
+         * @returns {Object} The drawn card.
+         */
+        function drawCard() {
+            if (deck.length === 0) {
+                deck = shuffleDeck(createDeck());
+                console.warn("Deck ran out of cards! Recreated and shuffled.");
+            }
+            return deck.pop();
+        }
+
+        /**
+         * Calculates the score of a given hand, handling Ace values (1 or 11).
+         * @param {Array<Object>} handCards - The array of card objects in a hand.
+         * @returns {number} The total score of the hand.
+         */
+        function calculateScore(handCards) {
+            let score = 0;
+            let numAces = 0;
+
+            for (const card of handCards) {
+                score += card.value;
+                if (card.rank === 'A') {
+                    numAces++;
+                }
+            }
+
+            while (score > 21 && numAces > 0) {
+                score -= 10;
+                numAces--;
+            }
+            return score;
+        }
+
+        /**
+         * Renders the cards for all player hands and the dealer's hand.
+         * @param {boolean} [hideDealerFirstCard=false] - If true, the dealer's first card is hidden.
+         */
+        function displayAllHands(hideDealerFirstCard = false) {
+            // Display Dealer's hand
+            displayCards(dealerHand.cards, dealerCardsEl, hideDealerFirstCard);
+
+            // Clear previous player hands display
+            playerHandsContainerEl.innerHTML = '';
+
+            // Display all player hands
+            playerHands.forEach((hand, index) => {
+                const handSection = document.createElement('div');
+                handSection.classList.add('player-hand-section', 'hand-section');
+                if (index === activeHandIndex && hand.isDone === false) {
+                    handSection.classList.add('active-hand');
+                }
+
+                handSection.innerHTML = `
+                    <span class="hand-label">YOUR HAND ${index + 1}:</span>
+                    <div id="player-cards-${index}" class="cards-container"></div>
+                    <span id="player-score-${index}" class="score">SCORE: ${hand.score}</span>
+                    <span class="balance-item bet-amount-display">BET: $${hand.bet}</span>
+                `;
+                playerHandsContainerEl.appendChild(handSection);
+
+                const playerCardsEl = document.getElementById(`player-cards-${index}`);
+                displayCards(hand.cards, playerCardsEl);
+
+                // Add result message to hand if hand is done
+                if (hand.isDone && hand.result) {
+                    const resultEl = document.createElement('span');
+                    resultEl.classList.add('result-message', hand.result);
+                    resultEl.textContent = hand.result.toUpperCase();
+                    handSection.appendChild(resultEl);
+                }
+            });
+        }
+
+
+        /**
+         * Renders the cards in a given hand to the specified HTML element.
+         * @param {Array<Object>} handCards - The hand of cards to display.
+         * @param {HTMLElement} element - The DOM element where cards will be rendered.
+         * @param {boolean} [hideFirstCard=false] - If true, the first card will be displayed face down.
+         */
+        function displayCards(handCards, element, hideFirstCard = false) {
+            element.innerHTML = ''; // Clear existing cards
+
+            handCards.forEach((card, index) => {
+                const cardDiv = document.createElement('div');
+                cardDiv.classList.add('card'); // All cards get the base 'card' class
+
+                if (hideFirstCard && index === 0) {
+                    cardDiv.classList.add('card-hidden');
+                    cardDiv.innerHTML = '<span class="text-6xl">?</span>';
+                } else {
+                    let suitSymbol;
+                    const isRedSuit = card.suit === 'Hearts' || card.suit === 'Diamonds';
+                    const colorClass = isRedSuit ? 'text-red-600' : 'text-gray-800'; // Determine the glow color class
+
+                    cardDiv.classList.add(colorClass); // <--- Apply the colorClass to the main card div
+
+                    switch (card.suit) {
+                        case 'Hearts': suitSymbol = '♥'; break;
+                        case 'Diamonds': suitSymbol = '♦'; break;
+                        case 'Clubs': suitSymbol = '♣'; break;
+                        case 'Spades': suitSymbol = '♠'; break;
+                    }
+                    // The text/symbols themselves will be dark, with the glow coming from the parent's class and CSS targeting
+                    cardDiv.innerHTML = `
+                        <span class="card-top-left">${card.rank}<br>${suitSymbol}</span>
+                        <span class="card-center-value">${card.rank}</span>
+                        <span class="card-bottom-right">${card.rank}<br>${suitSymbol}</span>
+                    `;
+                }
+                element.appendChild(cardDiv);
+            });
+        }
+
+
+        /**
+         * Updates the score displayed on the UI for a specific player/dealer.
+         * @param {HTMLElement} element - The DOM element to update (e.g., playerScoreEl).
+         * @param {string|number} score - The score value to display. Can be '??' for hidden.
+         */
+        function updateScoreDisplay(element, score) {
+            element.textContent = `SCORE: ${score}`;
+        }
+
+        /**
+         * Updates the bankroll and current bet displays.
+         */
+        function updateFinancialDisplay() {
+            bankrollEl.textContent = bankroll;
+            currentBetEl.textContent = initialBet; // Show initial bet amount
+        }
+
+        /**
+         * Sets the game message displayed to the user.
+         * @param {string} msg - The message to display.
+         * @param {string} [color='white'] - Optional color for the message text (e.g., 'green', 'red').
+         */
+        function setGameMessage(msg, color = 'var(--text-color)') {
+            messageEl.textContent = msg;
+            messageEl.style.color = color;
+            messageEl.classList.remove('no-animation'); // Always remove first to re-add
+            if (msg === "ENTER YOUR BET AND CLICK \"PLACE BET & DEAL\" TO START!") {
+                 messageEl.classList.add('no-animation'); // No pulse animation for static initial message
+                 messageEl.style.textShadow = 'none';
+                 messageEl.style.color = 'var(--text-color)';
+            } else {
+                // Set appropriate glow for other messages
+                if (color === 'red') {
+                    messageEl.style.textShadow = '0 0 10px #FF0000, 0 0 20px #FF0000';
+                } else if (color === 'gold') {
+                    messageEl.style.textShadow = '0 0 10px #FFD700, 0 0 20px #FFD700';
+                } else if (color === 'green') {
+                    messageEl.style.textShadow = '0 0 10px #00FF00, 0 0 20px #00FF00';
+                } else if (color === 'yellow') {
+                    messageEl.style.textShadow = '0 0 10px #FFFF00, 0 0 20px #FFFF00';
+                } else if (color === 'blue') {
+                    messageEl.style.textShadow = '0 0 10px #00BFFF, 0 0 20px #00BFFF';
+                } else if (color === 'purple') {
+                    messageEl.style.textShadow = '0 0 10px #CC33FF, 0 0 20px #CC33FF';
+                } else {
+                    messageEl.style.textShadow = '0 0 10px var(--primary-neon), 0 0 20px var(--primary-neon)';
+                }
+            }
+        }
+
+        /**
+         * Disables all action buttons (Hit, Stand, Double Down, Split).
+         */
+        function disableActionButtons() {
+            hitBtn.disabled = true;
+            standBtn.disabled = true;
+            doubleDownBtn.disabled = true;
+            splitBtn.disabled = true;
+        }
+
+        /**
+         * Manages button states based on the game phase and active hand.
+         */
+        function updateButtonStates() {
+            if (!isGameInProgress) {
+                placeBetBtn.disabled = bankroll <= 0;
+                betInput.disabled = bankroll <= 0;
+                disableActionButtons();
+                resetBtn.disabled = bankroll <= 0;
+                if (bankroll <= 0) {
+                    setGameMessage("GAME OVER! YOU'RE OUT OF MONEY. REFRESH THE PAGE TO RESTART.", 'red');
+                    resetBtn.disabled = true;
+                    placeBetBtn.disabled = true;
+                    betInput.disabled = true;
+                    casinoAudio.pause(); // Pause audio if game is truly over
+                    casinoAudio.currentTime = 0; // Rewind to the beginning
+                }
+            } else {
+                placeBetBtn.disabled = true;
+                betInput.disabled = true;
+                resetBtn.disabled = true; // Disable reset during a hand
+
+                const activeHand = playerHands[activeHandIndex];
+                if (activeHand && !activeHand.isDone) {
+                    hitBtn.disabled = false;
+                    standBtn.disabled = false;
+                    // Double Down is only available on the first two cards and if enough bankroll for the current hand's bet
+                    doubleDownBtn.disabled = !(activeHand.cards.length === 2 && bankroll >= activeHand.bet);
+                    // Split is only available on the first two cards of the first hand, if ranks match, and enough bankroll
+                    // And if there's only one hand currently (can't split a split hand)
+                    splitBtn.disabled = !(playerHands.length === 1 && activeHand.cards.length === 2 && activeHand.cards[0].rank === activeHand.cards[1].rank && bankroll >= activeHand.bet);
+                } else {
+                    disableActionButtons();
+                }
+            }
+            displayAllHands(true); // Update UI to reflect active hand
+        }
+
+        /**
+         * Handles the start of a new game.
+         * Validates bet, initializes the deck, deals initial cards, and updates UI.
+         */
+        function placeBetAndDeal() {
+            const betAmount = parseInt(betInput.value);
+
+            if (isNaN(betAmount) || betAmount <= 0) {
+                setGameMessage("PLEASE ENTER A VALID BET AMOUNT (A POSITIVE NUMBER).", 'red');
+                return;
+            }
+            if (betAmount > bankroll) {
+                setGameMessage("YOU DON'T HAVE ENOUGH MONEY FOR THAT BET! YOUR BANKROLL IS $" + bankroll + ".", 'red');
+                return;
+            }
+
+            // Deduct bet from bankroll for the first hand
+            bankroll -= betAmount;
+            initialBet = betAmount; // Store initial bet for potential splits
+            updateFinancialDisplay();
+
+            // Play background audio when a new game starts
+            casinoAudio.play().catch(e => console.error("Error playing audio:", e));
+
+            // Reset game state for a new hand
+            playerHands = [{ cards: [], score: 0, bet: betAmount, isDone: false, result: '' }];
+            dealerHand = { cards: [], score: 0 };
+            activeHandIndex = 0;
+            isGameInProgress = true;
+            messageEl.classList.remove('animate-pulse');
+
+            deck = shuffleDeck(createDeck());
+
+            // Deal initial two cards to player's first hand
+            playerHands[0].cards.push(drawCard());
+            playerHands[0].cards.push(drawCard());
+
+            // Deal initial two cards to dealer (one hidden)
+            dealerHand.cards.push(drawCard());
+            dealerHand.cards.push(drawCard());
+
+            // Calculate initial scores
+            playerHands[0].score = calculateScore(playerHands[0].cards);
+            dealerHand.score = calculateScore(dealerHand.cards);
+
+            updateScoreDisplay(dealerScoreEl, '??'); // Indicate score is hidden
+
+            // Check for immediate blackjacks
+            const playerHasBlackjack = playerHands[0].score === 21 && playerHands[0].cards.length === 2; // Must be two cards for true blackjack
+            const dealerHasBlackjack = dealerHand.score === 21 && dealerHand.cards.length === 2; // Must be two cards for true blackjack
+
+            if (playerHasBlackjack && dealerHasBlackjack) {
+                setGameMessage("BOTH HAVE BLACKJACK! IT'S A PUSH.", 'yellow');
+                playerHands[0].result = 'push';
+                playerHands[0].isDone = true;
+                isGameInProgress = false;
+                revealDealerHand();
+                setTimeout(finalizeRound, 1500); // Give time to read message
+            } else if (playerHasBlackjack) {
+                setGameMessage("BLACKJACK! YOU WIN!", 'gold');
+                bankroll += playerHands[0].bet * 2.5; // Payout: original bet + 1.5 * original bet
+                playerHands[0].result = 'win';
+                playerHands[0].isDone = true;
+                isGameInProgress = false;
+                revealDealerHand();
+                setTimeout(finalizeRound, 1500); // Give time to read message
+            } else if (dealerHasBlackjack) {
+                setGameMessage("DEALER HAS BLACKJACK! YOU LOSE.", 'red');
+                playerHands[0].result = 'lose';
+                playerHands[0].isDone = true;
+                isGameInProgress = false;
+                revealDealerHand();
+                setTimeout(finalizeRound, 1500); // Give time to read message
+            } else {
+                setGameMessage("YOUR HAND 1: HIT, STAND, DOUBLE DOWN, OR SPLIT?");
+            }
+
+            updateButtonStates();
+        }
+
+        /**
+         * Handles the player choosing to "Hit".
+         * Draws a card for the active player hand, updates score, and checks for bust.
+         */
+        function hit() {
+            if (!isGameInProgress) return;
+
+            const activeHand = playerHands[activeHandIndex];
+            if (activeHand.isDone) return; // Should not happen if buttons are disabled correctly
+
+            // After hitting, double down and split are no longer an option for this hand
+            doubleDownBtn.disabled = true;
+            splitBtn.disabled = true;
+
+            const newCard = drawCard();
+            activeHand.cards.push(newCard);
+            activeHand.score = calculateScore(activeHand.cards);
+
+            displayAllHands(true); // Update UI for the active hand
+
+            if (activeHand.score > 21) {
+                setGameMessage(`YOUR HAND ${activeHandIndex + 1} BUSTED!`, 'red');
+                activeHand.isDone = true;
+                activeHand.result = 'lose';
+                setTimeout(advanceToNextHand, 1000); // Small delay to show bust message
+            } else if (activeHand.score === 21) {
+                setGameMessage(`YOUR HAND ${activeHandIndex + 1} REACHED 21! STANDING...`, 'gold');
+                activeHand.isDone = true;
+                setTimeout(advanceToNextHand, 1000); // Small delay to show 21 message
+            } else {
+                setGameMessage(`YOUR HAND ${activeHandIndex + 1}: HIT OR STAND?`);
+            }
+            updateButtonStates();
+        }
+
+        /**
+         * Handles the player choosing to "Double Down".
+         * Doubles the bet for the active hand, draws one card, and then automatically stands.
+         */
+        function doubleDown() {
+            if (!isGameInProgress) return;
+
+            const activeHand = playerHands[activeHandIndex];
+            if (activeHand.cards.length !== 2 || bankroll < activeHand.bet) {
+                setGameMessage("INVALID DOUBLE DOWN: ONLY ON FIRST TWO CARDS WITH SUFFICIENT FUNDS.", 'red');
+                return;
+            }
+
+            // Deduct second bet from bankroll
+            bankroll -= activeHand.bet;
+            activeHand.bet *= 2; // Double the hand's bet
+            updateFinancialDisplay();
+            setGameMessage(`DOUBLE DOWN ON HAND ${activeHandIndex + 1}! BET: $${activeHand.bet}`, 'orange');
+
+            // Draw exactly one card
+            const newCard = drawCard();
+            activeHand.cards.push(newCard);
+            activeHand.score = calculateScore(activeHand.cards);
+
+            displayAllHands(true);
+
+            // After double down, player must stand
+            activeHand.isDone = true; // Mark current hand as done
+
+            if (activeHand.score > 21) {
+                setGameMessage(`HAND ${activeHandIndex + 1} BUSTED ON DOUBLE DOWN!`, 'red');
+                activeHand.result = 'lose';
+            } else {
+                setGameMessage(`HAND ${activeHandIndex + 1} STANDS.`, 'blue');
+            }
+            // Disable all action buttons for this hand
+            disableActionButtons();
+            setTimeout(advanceToNextHand, 1000);
+        }
+
+        /**
+         * Handles the player choosing to "Split".
+         * Creates a new hand, moves one card, adds a new bet, and deals new cards.
+         */
+        function split() {
+            if (!isGameInProgress) return;
+
+            const activeHand = playerHands[activeHandIndex];
+            // Check if it's the initial hand, has exactly two cards, and they have the same rank
+            if (playerHands.length !== 1 || activeHand.cards.length !== 2 || activeHand.cards[0].rank !== activeHand.cards[1].rank) {
+                setGameMessage("INVALID SPLIT: ONLY ON INITIAL TWO CARDS OF SAME RANK.", 'red');
+                return;
+            }
+            // Check if player has enough bankroll for an additional bet
+            if (bankroll < activeHand.bet) {
+                setGameMessage("NOT ENOUGH MONEY TO SPLIT!", 'red');
+                return;
+            }
+
+            // Deduct the second bet
+            bankroll -= activeHand.bet;
+            updateFinancialDisplay();
+            setGameMessage("SPLITTING HANDS!", 'purple');
+
+            // Create a new hand and move one card from the active hand to it
+            const newHand = {
+                cards: [activeHand.cards.pop()], // Move the second card to the new hand
+                score: 0,
+                bet: initialBet, // New hand gets the initial bet
+                isDone: false,
+                result: ''
+            };
+            playerHands.push(newHand);
+
+            // Deal a new card to each hand
+            activeHand.cards.push(drawCard());
+            newHand.cards.push(drawCard());
+
+            // Recalculate scores
+            activeHand.score = calculateScore(activeHand.cards);
+            newHand.score = calculateScore(newHand.cards);
+
+            // The active hand remains the first hand (index 0)
+            activeHandIndex = 0;
+
+            // If either hand immediately gets 21, it stands
+            if (activeHand.score === 21) {
+                activeHand.isDone = true;
+                setGameMessage(`HAND ${activeHandIndex + 1} HAS 21 AND STANDS.`, 'gold');
+            }
+            if (newHand.score === 21) {
+                newHand.isDone = true;
+                // If both got 21, the last message wins
+                if (activeHand.isDone) {
+                     setTimeout(() => setGameMessage(`HAND ${playerHands.length} HAS 21 AND STANDS.`, 'gold'), 500);
+                } else {
+                    setGameMessage(`HAND ${playerHands.length} HAS 21 AND STANDS.`, 'gold');
+                }
+            }
+
+            updateButtonStates(); // Update UI to show two hands and re-evaluate button states
+            // If the first hand immediately stands (e.g., got 21), advance to next
+            if (playerHands[0].isDone) {
+                setTimeout(advanceToNextHand, 1000);
+            } else {
+                setGameMessage(`YOUR HAND ${activeHandIndex + 1}: HIT, STAND, DOUBLE DOWN?`);
+            }
+        }
+
+
+        /**
+         * Handles the player choosing to "Stand".
+         * Marks the current hand as done and advances to the next player hand or dealer's turn.
+         */
+        function stand() {
+            if (!isGameInProgress) return;
+
+            const activeHand = playerHands[activeHandIndex];
+            if (activeHand.isDone) return; // Should not happen if buttons are disabled correctly
+
+            setGameMessage(`YOUR HAND ${activeHandIndex + 1} STANDS.`, 'blue');
+            activeHand.isDone = true;
+            disableActionButtons(); // Disable for this hand's completion
+            setTimeout(advanceToNextHand, 1000);
+        }
+
+        /**
+         * Advances to the next player hand if available, otherwise initiates the dealer's turn.
+         */
+        function advanceToNextHand() {
+            // Find the next active hand
+            let nextHandFound = false;
+            for (let i = activeHandIndex + 1; i < playerHands.length; i++) {
+                if (!playerHands[i].isDone) {
+                    activeHandIndex = i;
+                    nextHandFound = true;
+                    break;
+                }
+            }
+
+            if (nextHandFound) {
+                setGameMessage(`NOW PLAYING YOUR HAND ${activeHandIndex + 1}: HIT, STAND, DOUBLE DOWN?`);
+                updateButtonStates(); // Update buttons for the new active hand
+            } else {
+                // All player hands are done, proceed to dealer's turn
+                setGameMessage("ALL YOUR HANDS ARE PLAYED. DEALER'S TURN...");
+                revealDealerHand(); // Show dealer's first card before they play
+                updateScoreDisplay(dealerScoreEl, dealerHand.score); // Show dealer's correct score
+                setTimeout(startDealerTurn, 1500); // Give time for message to display
+            }
+        }
+
+
+        /**
+         * Reveals the dealer's hidden card and displays the full hand.
+         */
+        function revealDealerHand() {
+            displayCards(dealerHand.cards, dealerCardsEl, false); // Display all dealer cards
+        }
+
+        /**
+         * Initiates and manages the dealer's turn.
+         */
+        function startDealerTurn() {
+            const dealerPlayInterval = setInterval(() => {
+                if (dealerHand.score < 17) {
+                    const newCard = drawCard();
+                    dealerHand.cards.push(newCard);
+                    dealerHand.score = calculateScore(dealerHand.cards);
+                    displayCards(dealerHand.cards, dealerCardsEl, false);
+                    updateScoreDisplay(dealerScoreEl, dealerHand.score);
+
+                    if (dealerHand.score > 21) {
+                        clearInterval(dealerPlayInterval);
+                        setGameMessage("DEALER BUSTED!", 'green');
+                        setTimeout(finalizeRound, 1500);
+                    }
+                } else {
+                    clearInterval(dealerPlayInterval);
+                    finalizeRound(); // Dealer stands or busts, now check all hands
+                }
+            }, 1000); // Dealer draws a card every 1 second
+        }
+
+        /**
+         * Finalizes the round, checks all player hands against the dealer, and adjusts bankroll.
+         */
+        function finalizeRound() {
+            isGameInProgress = false; // Game round is now over
+            let finalMessage = "ROUND OVER!";
+            let finalMessageColor = "var(--text-color)";
+
+            // Loop through player hands to determine results
+            playerHands.forEach((hand, index) => {
+                // Skip if result already set (e.g., by blackjack or bust during player turn)
+                if (hand.result === '') {
+                    if (hand.score > 21) {
+                        hand.result = 'lose'; // Already handled, but ensure result is set
+                    } else if (dealerHand.score > 21) {
+                        hand.result = 'win';
+                        bankroll += hand.bet * 2;
+                    } else if (hand.score > dealerHand.score) {
+                        hand.result = 'win';
+                        bankroll += hand.bet * 2;
+                    } else if (dealerHand.score > hand.score) {
+                        hand.result = 'lose';
+                    } else { // Push
+                        hand.result = 'push';
+                        bankroll += hand.bet;
+                    }
+                }
+            });
+
+            // After all hands are processed, update financial and button states
+            updateFinancialDisplay();
+            updateButtonStates();
+            resetBtn.disabled = false; // Enable "New Round" button
+            displayAllHands(false); // Display all cards including dealer's hidden one
+
+            // Determine an overall message or state
+            if (bankroll <= 0) {
+                finalMessage = "GAME OVER! YOU'RE OUT OF MONEY. REFRESH THE PAGE TO RESTART.";
+                finalMessageColor = 'red';
+                resetBtn.disabled = true;
+                placeBetBtn.disabled = true;
+                betInput.disabled = true;
+                casinoAudio.pause(); // Pause audio if game is truly over
+                casinoAudio.currentTime = 0; // Rewind to the beginning
+            } else {
+                finalMessage = "ROUND OVER! CLICK 'NEW ROUND' OR PLACE A NEW BET.";
+            }
+            setGameMessage(finalMessage, finalMessageColor);
+        }
+
+
+        /**
+         * Resets the game to allow placing a new bet for a new round.
+         * Clears hands and scores visually. Does not reset bankroll (unless game over).
+         */
+        function resetGameForNewRound() {
+            // Clear cards and scores visually
+            playerHandsContainerEl.innerHTML = ''; // Clear all player hands
+            dealerCardsEl.innerHTML = '';
+            updateScoreDisplay(dealerScoreEl, '??'); // Reset dealer score display
+
+            // Reset game state variables for a new round
+            isGameInProgress = false;
+            dealerHand = { cards: [], score: 0 };
+            playerHands = [];
+            activeHandIndex = 0;
+            initialBet = 0; // Reset initial bet
+            updateFinancialDisplay();
+
+            // Pause background audio when the round is reset
+            casinoAudio.pause();
+            casinoAudio.currentTime = 0; // Rewind to the beginning
+
+            setGameMessage("ENTER YOUR BET AND CLICK \"PLACE BET & DEAL\" TO START!", 'white');
+
+            // Re-enable bet input and place bet button
+            betInput.disabled = false;
+            betInput.value = Math.min(bankroll, 100); // Suggest a default bet, max 100 or current bankroll
+            placeBetBtn.disabled = false;
+
+            // Disable action buttons until new hand is dealt
+            disableActionButtons();
+            resetBtn.disabled = true;
+            updateButtonStates(); // Final check on button states based on bankroll
+        }
+
+        // Event Listeners for buttons
+        placeBetBtn.addEventListener('click', placeBetAndDeal);
+        hitBtn.addEventListener('click', hit);
+        standBtn.addEventListener('click', stand);
+        doubleDownBtn.addEventListener('click', doubleDown);
+        splitBtn.addEventListener('click', split); // Event listener for Split button
+        resetBtn.addEventListener('click', resetGameForNewRound);
+
+        // Initialize the game state when the window loads
+        window.onload = function() {
+            updateFinancialDisplay(); // Display initial bankroll
+            resetGameForNewRound(); // Set initial button states and message
+            // Note: Audio will only start playing when placeBetAndDeal is called.
+            // Modern browsers prevent autoplay without user interaction.
+        };
+    </script>
+</body>
+</html>
