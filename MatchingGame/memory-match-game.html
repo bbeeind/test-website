@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Matching Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #5c5f6f 0%, #d3d0d7 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .game-header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .game-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .game-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            color: white;
+            font-size: 1.1rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 15px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .card {
+            aspect-ratio: 1;
+            background: linear-gradient(145deg, #ffffff, #e6e6e6);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 2rem;
+            font-weight: bold;
+            position: relative;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            user-select: none;
+            min-width: 80px;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .card.flipped {
+            background: linear-gradient(145deg, #4facfe, #00f2fe);
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .card.matched {
+            background: linear-gradient(145deg, #56ab2f, #a8e6cf);
+            color: white;
+            animation: matchPulse 0.6s ease;
+        }
+
+        .card.hidden {
+            background: linear-gradient(145deg, #ff6b6b, #ffa8a8);
+            color: transparent;
+        }
+
+        @keyframes matchPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .reset-btn {
+            display: block;
+            margin: 30px auto 0;
+            padding: 12px 30px;
+            background: linear-gradient(145deg, #ff6b6b, #ff8e8e);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .reset-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .win-message {
+            text-align: center;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-top: 20px;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .win-message.show {
+            opacity: 1;
+        }
+
+        @media (max-width: 800px) {
+            .grid {
+                max-width: 90vw;
+            }
+            
+            .card {
+                font-size: 1.5rem;
+            }
+            
+            .game-header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-header">
+            <h1>Memory Match</h1>
+            <div class="game-stats">
+                <div>Moves: <span id="moves">0</span></div>
+                <div>Matches: <span id="matches">0</span>/18</div>
+                <div>Time: <span id="timer">00:00</span></div>
+            </div>
+        </div>
+        
+        <div class="grid" id="gameGrid"></div>
+        
+        <button class="reset-btn" onclick="resetGame()">🔄 New Game</button>
+        
+        <div class="win-message" id="winMessage">
+            🎉 Congratulations! You won! 🎉
+        </div>
+    </div>
+
+    <script>
+        let gameState = {
+            cards: [],
+            flippedCards: [],
+            matchedPairs: 0,
+            moves: 0,
+            gameStarted: false,
+            startTime: null,
+            timerInterval: null
+        };
+
+        // Emoji pairs for the cards (18 pairs for 36 cards)
+        const cardSymbols = [
+            '🐶', '🐱', '🐭', '🐹', '🐰', '🦊',
+            '🐻', '🐼', '🐨', '🐯', '🦁', '🐮',
+            '🐷', '🐸', '🐙', '🐵', '🦄', '🐝'
+        ];
+
+        function createCards() {
+            const cards = [];
+            // Create pairs of cards
+            for (let i = 0; i < 18; i++) {
+                cards.push(cardSymbols[i], cardSymbols[i]);
+            }
+            return shuffleArray(cards);
+        }
+
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function createGameGrid() {
+            const grid = document.getElementById('gameGrid');
+            grid.innerHTML = '';
+            gameState.cards = createCards();
+            
+            gameState.cards.forEach((symbol, index) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.dataset.index = index;
+                card.dataset.symbol = symbol;
+                card.addEventListener('click', handleCardClick);
+                grid.appendChild(card);
+            });
+        }
+
+        function handleCardClick(event) {
+            const card = event.target;
+            const index = parseInt(card.dataset.index);
+            
+            // Prevent clicking on already flipped or matched cards
+            if (card.classList.contains('flipped') || card.classList.contains('matched')) {
+                return;
+            }
+            
+            // Prevent clicking more than 2 cards at once
+            if (gameState.flippedCards.length >= 2) {
+                return;
+            }
+
+            // Start timer on first click
+            if (!gameState.gameStarted) {
+                startTimer();
+                gameState.gameStarted = true;
+            }
+
+            // Flip the card
+            flipCard(card, index);
+        }
+
+        function flipCard(card, index) {
+            card.classList.add('flipped');
+            card.textContent = card.dataset.symbol;
+            gameState.flippedCards.push({ card, index });
+
+            if (gameState.flippedCards.length === 2) {
+                gameState.moves++;
+                updateMoves();
+                checkForMatch();
+            }
+        }
+
+        function checkForMatch() {
+            const [first, second] = gameState.flippedCards;
+            
+            if (first.card.dataset.symbol === second.card.dataset.symbol) {
+                // Match found!
+                setTimeout(() => {
+                    first.card.classList.add('matched');
+                    second.card.classList.add('matched');
+                    first.card.classList.remove('flipped');
+                    second.card.classList.remove('flipped');
+                    
+                    gameState.matchedPairs++;
+                    updateMatches();
+                    gameState.flippedCards = [];
+                    
+                    // Check for win condition
+                    if (gameState.matchedPairs === 18) {
+                        setTimeout(showWinMessage, 500);
+                    }
+                }, 600);
+            } else {
+                // No match - flip cards back
+                setTimeout(() => {
+                    first.card.classList.remove('flipped');
+                    second.card.classList.remove('flipped');
+                    first.card.textContent = '';
+                    second.card.textContent = '';
+                    gameState.flippedCards = [];
+                }, 1000);
+            }
+        }
+
+        function startTimer() {
+            gameState.startTime = Date.now();
+            gameState.timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        function updateTimer() {
+            const elapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            document.getElementById('timer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function updateMoves() {
+            document.getElementById('moves').textContent = gameState.moves;
+        }
+
+        function updateMatches() {
+            document.getElementById('matches').textContent = gameState.matchedPairs;
+        }
+
+        function showWinMessage() {
+            clearInterval(gameState.timerInterval);
+            document.getElementById('winMessage').classList.add('show');
+        }
+
+        function resetGame() {
+            // Reset game state
+            gameState = {
+                cards: [],
+                flippedCards: [],
+                matchedPairs: 0,
+                moves: 0,
+                gameStarted: false,
+                startTime: null,
+                timerInterval: null
+            };
+            
+            // Clear timer
+            if (gameState.timerInterval) {
+                clearInterval(gameState.timerInterval);
+            }
+            
+            // Reset UI
+            document.getElementById('moves').textContent = '0';
+            document.getElementById('matches').textContent = '0';
+            document.getElementById('timer').textContent = '00:00';
+            document.getElementById('winMessage').classList.remove('show');
+            
+            // Create new game
+            createGameGrid();
+        }
+
+        // Initialize the game when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            createGameGrid();
+        });
+    </script>
+</body>
+</html>
